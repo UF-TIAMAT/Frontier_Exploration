@@ -61,7 +61,7 @@ class BaseExplorer(Sensor):
         self.closest_frontier_waypoint = None
         self.top_down_map = None
         self.fog_of_war_mask = None
-        self.frontier_waypoints = np.array([])
+        self.frontier_waypoints = {"midpoint": np.array([]), "direction": np.array([])}
         # Inflection is used by action inflection sensor for IL
         self.inflection = False
         self._prev_action = None
@@ -185,14 +185,14 @@ class BaseExplorer(Sensor):
         return next_waypoint
 
     def _get_closest_waypoint(self):
-        if len(self.frontier_waypoints) == 0:
+        if len(self.frontier_waypoints["midpoint"]) == 0:
             return None
-        sim_waypoints = self._pixel_to_map_coors(self.frontier_waypoints)
+        sim_waypoints = self._pixel_to_map_coors(self.frontier_waypoints["midpoint"])
         idx, _ = self._astar_search(sim_waypoints)
         if idx is None:
             return None
 
-        return self.frontier_waypoints[idx]
+        return self.frontier_waypoints["midpoint"][idx]
 
     def _astar_search(self, sim_waypoints, start_position=None):
         if start_position is None:
