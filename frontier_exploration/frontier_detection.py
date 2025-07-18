@@ -290,20 +290,15 @@ def get_frontier_midpoint(frontier) -> np.ndarray:
     return midpoint
 
 
-@njit 
-def get_frontier_direction(frontiers: List[np.ndarray]) -> np.ndarray:
-    
-    directions = []
-    for frontier in frontiers:
 
-        line_segments = np.concatenate((frontier[:-1], frontier[1:]), axis=1).reshape(
-            (-1, 2, 2)
-        )
-        directions.append(_pca_direction(line_segments))
+def get_frontier_direction(frontier: List[np.ndarray]) -> np.ndarray:
 
-    return np.array(directions[:, 0])
+    line_segments = np.concatenate((frontier[:-1], frontier[1:]), axis=1).reshape(
+        (-1, 2, 2)
+    )
+    return _pca_direction(line_segments)[0]
 
-def _pca_direction(segments):
+def _pca_direction(segments: np.ndarray) -> tuple[np.ndarray, float]:
     """
     Use Principal Component Analysis to find the dominant direction.
     """
@@ -316,7 +311,7 @@ def _pca_direction(segments):
         points.extend([(x1, y1), (x2, y2)])
     
     if len(points) < 2:
-        raise ValueError("At least two points are required to compute a direction.")
+        return np.array([0, 0]), 1.0
     
     # Convert to numpy array
     points = np.array(points)

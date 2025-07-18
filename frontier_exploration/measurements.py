@@ -120,7 +120,7 @@ class FrontierExplorationMap(TopDownMap):
                     1,
                 )
 
-        for waypoint in self._explorer_sensor.frontier_waypoints:
+        for waypoint in self._explorer_sensor.frontier_waypoints["midpoint"]:
             if np.array_equal(waypoint, selected_frontier):
                 color = MAP_TARGET_POINT_INDICATOR
             else:

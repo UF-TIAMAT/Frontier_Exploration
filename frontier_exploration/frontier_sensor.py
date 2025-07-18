@@ -58,10 +58,10 @@ class FrontierSensor(Sensor):
 
         explorer: BaseExplorer = task.sensor_suite.sensors[explorer_key]  # type: ignore
 
-        if len(explorer.frontier_waypoints) == 0:
+        if len(explorer.frontier_waypoints["midpoint"]) == 0:
             return np.zeros((1, 2), dtype=np.float32)
 
-        global_frontiers = explorer._pixel_to_map_coors(explorer.frontier_waypoints)
+        global_frontiers = explorer._pixel_to_map_coors(explorer.frontier_waypoints["midpoint"])
 
         # Sort the frontiers by completion time cost
         completion_times = []
