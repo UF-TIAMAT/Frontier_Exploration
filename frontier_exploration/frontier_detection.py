@@ -224,7 +224,7 @@ def contour_to_frontiers(contour, unexplored_mask):
 
 def frontier_waypoints(
     frontiers: List[np.ndarray], xy: Optional[np.ndarray] = None
-) -> np.ndarray:
+) -> dict[str, np.ndarray]:
     """For each given frontier, returns the point on the frontier closest (euclidean
     distance) to the given coordinate. If coordinate is not given, will just return
     the midpoints of each frontier.
@@ -235,11 +235,26 @@ def frontier_waypoints(
         xy (np.ndarray): the given coordinate
 
     Returns:
-        np.ndarray: array of waypoints, one for each frontier
+        dict[str, np.ndarray]: Return dictionary with keys as 'midpoint' and 'direction
     """
     if xy is None:
-        return np.array([get_frontier_midpoint(i) for i in frontiers])
-    return np.array([get_closest_frontier_point(xy, i) for i in frontiers])
+
+        midpoint = np.array([get_frontier_midpoint(i) for i in frontiers])
+        direction = np.array([get_frontier_direction(i) for i in frontiers])
+
+        return {
+            "midpoint": midpoint,
+            "direction": direction
+            }
+    
+    else:
+        midpoint = np.array([get_closest_frontier_point(xy, i) for i in frontiers])
+        direction = np.full(midpoint.shape, np.nan)
+
+        return {
+            "midpoint": midpoint,
+            "direction": direction
+        }
 
 
 @njit
@@ -273,6 +288,62 @@ def get_frontier_midpoint(frontier) -> np.ndarray:
     # Calculate the midpoint coordinates
     midpoint = line_segment[0] + proportion * (line_segment[1] - line_segment[0])
     return midpoint
+
+
+@njit 
+def get_frontier_direction(frontiers: List[np.ndarray]) -> np.ndarray:
+    
+    directions = []
+    for frontier in frontiers:
+
+        line_segments = np.concatenate((frontier[:-1], frontier[1:]), axis=1).reshape(
+            (-1, 2, 2)
+        )
+        directions.append(_pca_direction(line_segments))
+
+    return np.array(directions[:, 0])
+
+def _pca_direction(segments):
+    """
+    Use Principal Component Analysis to find the dominant direction.
+    """
+    # Extract all points from segments
+    points = []
+
+    
+    for segment in segments:
+        (x1, y1), (x2, y2) = segment
+        points.extend([(x1, y1), (x2, y2)])
+    
+    if len(points) < 2:
+        raise ValueError("At least two points are required to compute a direction.")
+    
+    # Convert to numpy array
+    points = np.array(points)
+    
+    # Center the points
+    centroid = np.mean(points, axis=0)
+    centered_points = points - centroid
+    
+    # Calculate covariance matrix
+    cov_matrix = np.cov(centered_points.T)
+    
+    # Find eigenvalues and eigenvectors
+    eigenvalues, eigenvectors = np.linalg.eigh(cov_matrix)
+    
+    # The eigenvector with the largest eigenvalue is the principal direction
+    principal_direction = eigenvectors[:, -1]
+    
+    # Normalize
+    principal_direction = principal_direction / np.linalg.norm(principal_direction)
+    
+    # Confidence is the ratio of largest to smallest eigenvalue
+    if eigenvalues[0] > 1e-10:
+        confidence = eigenvalues[1] / eigenvalues[0]
+    else:
+        confidence = 1.0
+    
+    return principal_direction, confidence
 
 
 def get_closest_frontier_point(xy, frontier):

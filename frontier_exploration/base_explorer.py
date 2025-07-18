@@ -173,9 +173,9 @@ class BaseExplorer(Sensor):
                 self._area_thresh_in_pixels,
                 # xy=self._get_agent_pixel_coords(),
             )
-            if len(self.frontier_waypoints) > 0:
+            if len(self.frontier_waypoints["midpoint"]) > 0:
                 # frontiers are in (y, x) format, need to do some swapping
-                self.frontier_waypoints = self.frontier_waypoints[:, ::-1]
+                self.frontier_waypoints["midpoint"] = self.frontier_waypoints["midpoint"][:, ::-1]
 
     def _get_next_waypoint(self, goal: np.ndarray):
         goal_3d = self._pixel_to_map_coors(goal) if len(goal) == 2 else goal
